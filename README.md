@@ -1,3 +1,5 @@
+Варіан: Python 3.7 + venv + requirements.txt
+
 To install and boot this service you would need the following:
 
     Python 3.7.*
