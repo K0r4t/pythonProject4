@@ -7,7 +7,4 @@ app = Flask('name')
 def hello_world():
     return "Hello World 17"
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
 serve(app)
