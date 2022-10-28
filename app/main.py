@@ -1,6 +1,8 @@
 from flask import Flask, render_template
 from waitress import serve
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
 
 db = SQLAlchemy()
 
@@ -8,7 +10,7 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///labdb.db"
 db.init_app(app)
-
+migrate = Migrate(app, db)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -66,4 +68,5 @@ def films_list():
 
 
 if __name__ == '__main__':
-    serve(app)
+    # serve(app)
+    app.run()
