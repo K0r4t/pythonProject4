@@ -9,7 +9,6 @@ class User(db.Model):
     username = db.Column(db.String(120), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    playlists = db.relationship('Playlist', backref='user', lazy=True)
 
     def to_json(self):
         return {
