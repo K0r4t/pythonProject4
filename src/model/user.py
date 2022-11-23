@@ -1,7 +1,8 @@
-from src.app import db
+from src.app import db, auth
 from passlib.hash import pbkdf2_sha256 as sha256
 from src.error_handler.exception_wrapper import handle_error_format
 from src.error_handler.exception_wrapper import handle_server_exception
+
 
 
 class User(db.Model):
@@ -9,6 +10,7 @@ class User(db.Model):
     username = db.Column(db.String(120), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    roles = db.relationship('Role', secondary='users_roles', backref=db.backref('user', lazy='dynamic'))
 
     def to_json(self):
         return {
@@ -69,3 +71,45 @@ class User(db.Model):
         except AttributeError:
             return handle_error_format('User with such id does not exist.',
                                        'Field \'userId\' in path parameters.'), 404
+
+@auth.verify_password
+def verify_hash(username, password):
+    user = User.get_by_username(username)
+    if user and User.verify_hash(password, user.password):
+        return username
+
+
+@auth.get_user_roles
+def get_user_roles(user):
+    user_entity = User.get_by_username(user)
+    return [role.name for role in user_entity.roles]
+
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    @classmethod
+    def get_by_name(cls, name):
+        return cls.query.filter_by(name=name).first()
+
+    @classmethod
+    def get_by_id(cls, id):
+        return cls.query.filter_by(id=id).first()
+
+
+class UsersRoles(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
+    role_id = db.Column(db.Integer(), db.ForeignKey('role.id', ondelete='CASCADE'))
+

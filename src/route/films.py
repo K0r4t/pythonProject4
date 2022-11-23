@@ -1,4 +1,4 @@
-from src.app import app
+from src.app import app, auth
 from src.model.user import User
 from src.model.film import State, Film
 from flask_restful import reqparse
@@ -7,6 +7,7 @@ from src.error_handler.exception_wrapper import handle_server_exception
 
 
 @app.route('/film/<userId>', methods=['POST'])
+@auth.login_required(role='admin')
 @handle_server_exception
 def create_film(userId: int):
     parser = reqparse.RequestParser()
@@ -45,12 +46,14 @@ def create_film(userId: int):
 
 
 @app.route('/film/<filmId>', methods=['DELETE'])
+@auth.login_required(role='admin')
 @handle_server_exception
 def delete_film_by_id(filmId: int):
     return Film.delete_by_id(filmId)
 
 
 @app.route('/film/<filmId>', methods=['GET'])
+@auth.login_required(role='user')
 @handle_server_exception
 def get_film_by_id(filmId: int):
     film = Film.get_by_id(filmId)
@@ -63,6 +66,7 @@ def get_film_by_id(filmId: int):
 
 
 @app.route('/film/<filmId>', methods=['PUT'])
+@auth.login_required(role='admin')
 @handle_server_exception
 def update_film_by_id(filmId: int):
     parser = reqparse.RequestParser()

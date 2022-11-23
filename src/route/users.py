@@ -1,12 +1,12 @@
-from src.app import app
-from src.model.user import User
+from src.app import app, auth
+from src.model.user import User, Role
 from flask_restful import reqparse
 from src.error_handler.exception_wrapper import handle_error_format
 from src.error_handler.exception_wrapper import handle_server_exception
 
 
 @app.route('/user/create', methods=['POST'])
-@handle_server_exception
+#@handle_server_exception
 def create_user():
     parser = reqparse.RequestParser()
 
@@ -31,15 +31,18 @@ def create_user():
         password=User.generate_hash(data['password'])
     )
 
-    try:
-        user.save_to_db()
 
-        return {'message': 'User was successfully created'}, 200
-    except:
-        return {'message': 'Something went wrong'}, 500
+    role = Role.get_by_name("user")
+    user.roles.append(role)
+    user.save_to_db()
+
+    return {'message': 'User was successfully created'}, 200
+   # except:
+        #return {'message': 'Something went wrong'}, 500
 
 
 @app.route('/user/<userId>', methods=['GET'])
+@auth.login_required(role='user')
 @handle_server_exception
 def get_user_by_id(userId: int):
     user = User.get_by_id(userId)
@@ -50,6 +53,7 @@ def get_user_by_id(userId: int):
 
 
 @app.route('/user/name/<username>', methods=['GET'])
+@auth.login_required(role='user')
 @handle_server_exception
 def get_user_by_username(username: str):
     user = User.get_by_username(username)
@@ -64,32 +68,37 @@ def get_user_by_username(username: str):
 def update_user_by_id(userId: int):
     parser = reqparse.RequestParser()
 
-    parser.add_argument('username', help='username cannot be blank', required=True)
-    parser.add_argument('email', help='email cannot be blank', required=True)
+    username1 = auth.current_user()
+    userr = User.get_by_id(userId)
+    admin = Role.get_by_name("admin")
+    if username1 == userId or admin in userr.roles:
 
-    data = parser.parse_args()
-    username = data['username']
-    email = data['email']
+        parser.add_argument('username', help='username cannot be blank', required=True)
+        parser.add_argument('email', help='email cannot be blank', required=True)
 
-    user = User.get_by_id(userId)
+        data = parser.parse_args()
+        username = data['username']
+        email = data['email']
 
-    if not user:
-        return handle_error_format('User with such id does not exist.',
-                                   'Field \'userId\' in path parameters.'), 404
+        user = User.get_by_id(userId)
 
-    if User.get_by_username(username) and not (username == user.username):
-        return handle_error_format('User with such username already exists.',
-                                   'Field \'username\' in the request body.'), 400
+        if not user:
+            return handle_error_format('User with such id does not exist.',
+                                       'Field \'userId\' in path parameters.'), 404
 
-    if User.get_by_email(email) and not (email == user.email):
-        return handle_error_format('User with such email already exists.',
-                                   'Field \'email\' in the request body.'), 400
+        if User.get_by_username(username) and not (username == user.username):
+            return handle_error_format('User with such username already exists.',
+                                       'Field \'username\' in the request body.'), 400
 
-    user.username = username
-    user.email = email
-    user.save_to_db()
+        if User.get_by_email(email) and not (email == user.email):
+            return handle_error_format('User with such email already exists.',
+                                       'Field \'email\' in the request body.'), 400
 
-    return User.to_json(user)
+        user.username = username
+        user.email = email
+        user.save_to_db()
+
+        return User.to_json(user)
 
 
 @app.route('/user/<userId>', methods=['DELETE'])
