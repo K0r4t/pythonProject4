@@ -1,7 +1,7 @@
 from src.model import User, Role
 from unittest import TestCase, mock
 from undecorated import undecorated
-from src.route import create_user, get_user_by_id, get_user_by_username, update_user_by_id
+from src.route import create_user, get_user_by_id, get_user_by_username, update_user_by_id, delete_user_by_id
 
 class TestUsers(TestCase):
 
@@ -148,3 +148,12 @@ class TestUsers(TestCase):
     #     self.get_user_json['username'], self.get_user_json['email'] = 'username_new', 'email.new'
     #
     #     self.assertEqual(self.get_user_json, result)
+
+    @mock.patch('src.model.user.User.delete_by_id')
+    def test_delete_user_by_id(self, mock_delete_by_id):
+        mock_delete_by_id.return_value = self.get_user_json
+
+        undecorated_delete_user_by_id = undecorated(delete_user_by_id)
+        result = undecorated_delete_user_by_id(1)
+
+        self.assertEqual(self.get_user_json, result)
