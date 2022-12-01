@@ -28,7 +28,7 @@ class Film(db.Model):
             'name': self.name,
             'duration': self.duration,
             'state': self.state,
-            'created at': self.created_at
+            'created_at': self.created_at
         }
 
     def save_to_db(self):

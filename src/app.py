@@ -24,10 +24,8 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 auth = HTTPBasicAuth()
 
-import src.model.user
-import src.model.film
-import src.route.users
-import src.route.films
+#import src.model
+#import src.route
 
 
 @app.route("/api/v1/hello-world-17")

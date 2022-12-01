@@ -1,6 +1,6 @@
 from src.app import app, auth
-from src.model.user import User
-from src.model.film import State, Film
+from src.model import State, Film
+from src.model import User
 from flask_restful import reqparse
 from src.error_handler.exception_wrapper import handle_error_format
 from src.error_handler.exception_wrapper import handle_server_exception
@@ -19,7 +19,8 @@ def create_film(userId: int):
 
     data = parser.parse_args()
     name = data['name']
-    state = State(data['state'])
+    #state = State(data['state'])
+    state = data['state']
     duration = data['duration']
     created_at = data['created_at']
 
@@ -27,7 +28,7 @@ def create_film(userId: int):
 
     if not user:
         return handle_error_format('User with such id does not exist.',
-                                   'Field \'userId\' in path parameters.'), 400
+                                   'Field \'userId\' in path parameters.'), 404
 
     film = Film(
         name=name,
@@ -78,7 +79,7 @@ def update_film_by_id(filmId: int):
 
     data = parser.parse_args()
     name = data['name']
-    state = State(data['state'])
+    state = data['state']
     duration = data['duration']
     created_at = data['created_at']
 
@@ -88,7 +89,7 @@ def update_film_by_id(filmId: int):
         return handle_error_format('Film with such id does not exist.',
                                    'Field \'filmId\' in path parameters.'), 404
 
-    if Film.get_by_name(name) and not (name == film.name):
+    if Film.get_by_name(name):
         return handle_error_format('Film with such name already exists.',
                                    'Field \'name\' in the request body.'), 400
 

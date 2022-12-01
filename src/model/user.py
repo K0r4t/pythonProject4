@@ -17,6 +17,8 @@ class User(db.Model):
             'id': self.id,
             'username': self.username,
             'email': self.email,
+            'password': self.password,
+            'roles': [role.name for role in self.roles]
         }
 
     def save_to_db(self):
@@ -60,9 +62,6 @@ class User(db.Model):
     def delete_by_id(cls, userId):
         try:
             user = User.get_by_id(userId)
-
-            for playlist in user.playlists:
-                playlist.delete_by_id(playlist.id)
 
             user_json = User.to_json(user)
             User.query.filter_by(id=userId).delete()

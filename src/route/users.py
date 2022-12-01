@@ -1,5 +1,5 @@
 from src.app import app, auth
-from src.model.user import User, Role
+from src.model import User, Role
 from flask_restful import reqparse
 from src.error_handler.exception_wrapper import handle_error_format
 from src.error_handler.exception_wrapper import handle_server_exception
@@ -17,9 +17,15 @@ def create_user():
     data = parser.parse_args()
     username = data['username']
     email = data['email']
+    password = data['password']
 
     if '@' not in email:
-        return handle_error_format('Please, enter valid email address.', 'Field \'email\' in the request body.'), 400
+        return handle_error_format('Please, enter valid email address.',
+                                   'Field \'email\' in the request body.'), 400
+
+    if len(password) < 8:
+        return handle_error_format('Password should consist of at least 8 symbols.',
+                                   'Field \'password\' in the request body.'), 400
 
     if User.get_by_username(username):
         return handle_error_format('User with such username already exists.',
@@ -64,14 +70,16 @@ def get_user_by_username(username: str):
 
 
 @app.route('/user/<userId>', methods=['PUT'])
+@auth.login_required(role='user')
 @handle_server_exception
 def update_user_by_id(userId: int):
     parser = reqparse.RequestParser()
 
     username1 = auth.current_user()
     userr = User.get_by_id(userId)
+    auser = User.get_by_username(username1)
     admin = Role.get_by_name("admin")
-    if username1 == userId or admin in userr.roles:
+    if username1 == userr.username or admin in auser.roles:
 
         parser.add_argument('username', help='username cannot be blank', required=True)
         parser.add_argument('email', help='email cannot be blank', required=True)
@@ -86,13 +94,9 @@ def update_user_by_id(userId: int):
             return handle_error_format('User with such id does not exist.',
                                        'Field \'userId\' in path parameters.'), 404
 
-        if User.get_by_username(username) and not (username == user.username):
+        if User.get_by_username(username):
             return handle_error_format('User with such username already exists.',
-                                       'Field \'username\' in the request body.'), 400
-
-        if User.get_by_email(email) and not (email == user.email):
-            return handle_error_format('User with such email already exists.',
-                                       'Field \'email\' in the request body.'), 400
+                                       'Field \'username\' in the request body.'), 404
 
         user.username = username
         user.email = email
@@ -102,6 +106,9 @@ def update_user_by_id(userId: int):
 
 
 @app.route('/user/<userId>', methods=['DELETE'])
+@auth.login_required(role='admin')
 @handle_server_exception
 def delete_user_by_id(userId: int):
-    return User.delete_by_id(userId)
+    user = User.get_by_id(userId)
+    if user:
+        return User.delete_by_id(userId)
